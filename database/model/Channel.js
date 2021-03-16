@@ -9,7 +9,7 @@ const channelSchema = new mongoose.Schema({
     {
       user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "users",
+        ref: "User",
         required: true,
       },
       text: {
@@ -24,4 +24,4 @@ const channelSchema = new mongoose.Schema({
   ],
 });
 
-module.exports = mongoose.model("channels", channelSchema);
+module.exports = mongoose.model("Channel", channelSchema);
