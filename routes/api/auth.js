@@ -6,6 +6,7 @@ const {
 
 const userModel = require("../../database/model/User");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 router.post("/register", async (req, res) => {
   const { error } = registerValidationSchema.validate(req.body);
@@ -50,7 +51,11 @@ router.post("/login", async (req, res) => {
   if (!pwdIsValid)
     return res.status(400).json({ error: "Password is invalid" });
 
-  res.status(200).json("logged in");
+  const token = jwt.sign(
+    { id: user.id, email: user.email },
+    process.env.JWT_SECRET
+  );
+  res.header("auth-token", token).status(200).json(token);
 });
 
 module.exports = router;

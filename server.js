@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
+require("dotenv").config();
 require("./database/connection");
+const authMidleware = require("./middleware/auth");
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
