@@ -52,9 +52,11 @@ router.post("/messages/new", async (req, res) => {
   }
 
   try {
-    await channelModel.findByIdAndUpdate(req.body.channelid, {
-      $push: { messages: { user: req.body.userid, text: req.body.text } },
-    });
+    await channelModel
+      .findByIdAndUpdate(req.body.channelid, {
+        $push: { messages: { user: req.user.id, text: req.body.text } },
+      })
+      .exec();
     return res.status(200).json(req.body);
   } catch (err) {
     return res.status(500).json({ error: "Something went wrong" });

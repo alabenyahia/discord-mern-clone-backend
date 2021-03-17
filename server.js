@@ -8,5 +8,5 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use("/api/user", require("./routes/api/auth"));
-app.use("/api/channels", require("./routes/api/channels"));
+app.use("/api/channels", authMidleware, require("./routes/api/channels"));
 app.listen(5000, () => console.log("Server running on port 5000"));

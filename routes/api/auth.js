@@ -55,7 +55,7 @@ router.post("/login", async (req, res) => {
     { id: user.id, email: user.email },
     process.env.JWT_SECRET
   );
-  res.header("auth-token", token).status(200).json(token);
+  res.header("auth-token", token).status(200).json({ token });
 });
 
 module.exports = router;
