@@ -5,6 +5,7 @@ const channelSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 3,
+    maxlength: 20,
   },
   messages: {
     type: [
