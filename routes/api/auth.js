@@ -34,7 +34,7 @@ router.post("/register", async (req, res) => {
     error.details.forEach(
       (er) => (errObj = { ...errObj, [er.context.label]: er.message })
     );
-    return res.status(400).json({ validationError: errObj });
+    return res.status(400).json({ registerValidationError: errObj });
   }
 
   const emailIsNotUnique = await userModel.findOne({
@@ -43,7 +43,7 @@ router.post("/register", async (req, res) => {
   if (emailIsNotUnique)
     return res
       .status(400)
-      .json({ validationError: { email: "Email already exists" } });
+      .json({ registerValidationError: { email: "Email already exists" } });
 
   const usernameIsNotUnique = await userModel.findOne({
     username: req.body.username,
@@ -51,7 +51,9 @@ router.post("/register", async (req, res) => {
   if (usernameIsNotUnique)
     return res
       .status(400)
-      .json({ validationError: { username: "Username already exists" } });
+      .json({
+        registerValidationError: { username: "Username already exists" },
+      });
 
   const salt = await bcrypt.genSalt(10);
   const hashedPwd = await bcrypt.hash(req.body.password, salt);
@@ -75,10 +77,13 @@ router.post("/login", async (req, res) => {
   const { error } = loginValidationSchema.validate(req.body, {
     abortEarly: false,
   });
-  if (error)
-    return res
-      .status(400)
-      .json({ error: error.details.map((errDetail) => errDetail["message"]) });
+  if (error) {
+    let errObj = {};
+    error.details.forEach(
+      (er) => (errObj = { ...errObj, [er.context.label]: er.message })
+    );
+    return res.status(400).json({ loginValidationError: errObj });
+  }
 
   let user = null;
   try {
@@ -92,13 +97,13 @@ router.post("/login", async (req, res) => {
   if (!user)
     return res
       .status(400)
-      .json({ validationError: { email: "Email doesn't exists" } });
+      .json({ loginValidationError: { email: "Email doesn't exists" } });
 
   const pwdIsValid = await bcrypt.compare(req.body.password, user.password);
   if (!pwdIsValid)
     return res
       .status(400)
-      .json({ validationError: { password: "Password is invalid" } });
+      .json({ loginValidationError: { password: "Password is invalid" } });
 
   const token = jwt.sign(
     { id: user.id, email: user.email },
