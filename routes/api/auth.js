@@ -9,20 +9,30 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 router.post("/register", async (req, res) => {
-  const { error } = registerValidationSchema.validate(req.body);
-  if (error)
-    return res.status(400).json({ error: error.details[0]["message"] });
-  const usernameIsNotUnique = await userModel.findOne({
-    username: req.body.username,
+  const { error } = registerValidationSchema.validate(req.body, {
+    abortEarly: false,
   });
-  if (usernameIsNotUnique)
-    return res.status(400).json({ error: "Username already exists" });
+  if (error) {
+    let errObj = {};
+    error.details.forEach(
+      (er) => (errObj = { ...errObj, [er.context.label]: er.message })
+    );
+    return res.status(400).json({ error: errObj });
+  }
 
   const emailIsNotUnique = await userModel.findOne({
     email: req.body.email,
   });
   if (emailIsNotUnique)
-    return res.status(400).json({ error: "Email already exists" });
+    return res.status(400).json({ error: { email: "Email already exists" } });
+
+  const usernameIsNotUnique = await userModel.findOne({
+    username: req.body.username,
+  });
+  if (usernameIsNotUnique)
+    return res
+      .status(400)
+      .json({ error: { username: "Username already exists" } });
 
   const salt = await bcrypt.genSalt(10);
   const hashedPwd = await bcrypt.hash(req.body.password, salt);
@@ -34,7 +44,8 @@ router.post("/register", async (req, res) => {
       process.env.JWT_SECRET
     );
     return res.status(200).json({
-      user: { id: user.id, email: user.email, username: user.username, token },
+      user: { id: user.id, email: user.email, username: user.username },
+      token,
     });
   } catch (err) {
     res.status(500).json({ error: "Something went wrong" });
@@ -42,24 +53,38 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-  const { error } = loginValidationSchema.validate(req.body);
-  if (error)
-    return res.status(400).json({ error: error.details[0]["message"] });
-
-  const user = await userModel.findOne({
-    email: req.body.email,
+  const { error } = loginValidationSchema.validate(req.body, {
+    abortEarly: false,
   });
-  if (!user) return res.status(400).json({ error: "Email doesn't exists" });
+  if (error)
+    return res
+      .status(400)
+      .json({ error: error.details.map((errDetail) => errDetail["message"]) });
+
+  let user = null;
+  try {
+    user = await userModel.findOne({
+      email: req.body.email,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+
+  if (!user)
+    return res.status(400).json({ error: { email: "Email doesn't exists" } });
 
   const pwdIsValid = await bcrypt.compare(req.body.password, user.password);
   if (!pwdIsValid)
-    return res.status(400).json({ error: "Password is invalid" });
+    return res.status(400).json({ error: { password: "Password is invalid" } });
 
   const token = jwt.sign(
     { id: user.id, email: user.email },
     process.env.JWT_SECRET
   );
-  res.status(200).json({ token });
+  res.status(200).json({
+    user: { id: user.id, email: user.email, username: user.username },
+    token,
+  });
 });
 
 module.exports = router;
