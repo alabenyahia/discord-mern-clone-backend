@@ -7,6 +7,23 @@ const {
 const userModel = require("../../database/model/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("../../middleware/auth");
+
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const usr = await userModel.findById(req.user.id);
+    console.log(usr);
+    return res.status(200).json({
+      user: {
+        id: usr.id,
+        email: usr.email,
+        username: usr.username,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+});
 
 router.post("/register", async (req, res) => {
   const { error } = registerValidationSchema.validate(req.body, {
@@ -17,14 +34,16 @@ router.post("/register", async (req, res) => {
     error.details.forEach(
       (er) => (errObj = { ...errObj, [er.context.label]: er.message })
     );
-    return res.status(400).json({ error: errObj });
+    return res.status(400).json({ validationError: errObj });
   }
 
   const emailIsNotUnique = await userModel.findOne({
     email: req.body.email,
   });
   if (emailIsNotUnique)
-    return res.status(400).json({ error: { email: "Email already exists" } });
+    return res
+      .status(400)
+      .json({ validationError: { email: "Email already exists" } });
 
   const usernameIsNotUnique = await userModel.findOne({
     username: req.body.username,
@@ -32,7 +51,7 @@ router.post("/register", async (req, res) => {
   if (usernameIsNotUnique)
     return res
       .status(400)
-      .json({ error: { username: "Username already exists" } });
+      .json({ validationError: { username: "Username already exists" } });
 
   const salt = await bcrypt.genSalt(10);
   const hashedPwd = await bcrypt.hash(req.body.password, salt);
@@ -71,11 +90,15 @@ router.post("/login", async (req, res) => {
   }
 
   if (!user)
-    return res.status(400).json({ error: { email: "Email doesn't exists" } });
+    return res
+      .status(400)
+      .json({ validationError: { email: "Email doesn't exists" } });
 
   const pwdIsValid = await bcrypt.compare(req.body.password, user.password);
   if (!pwdIsValid)
-    return res.status(400).json({ error: { password: "Password is invalid" } });
+    return res
+      .status(400)
+      .json({ validationError: { password: "Password is invalid" } });
 
   const token = jwt.sign(
     { id: user.id, email: user.email },
