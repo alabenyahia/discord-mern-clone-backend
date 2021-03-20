@@ -12,7 +12,6 @@ const authMiddleware = require("../../middleware/auth");
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const usr = await userModel.findById(req.user.id);
-    console.log(usr);
     return res.status(200).json({
       user: {
         id: usr.id,
@@ -49,11 +48,9 @@ router.post("/register", async (req, res) => {
     username: req.body.username,
   });
   if (usernameIsNotUnique)
-    return res
-      .status(400)
-      .json({
-        registerValidationError: { username: "Username already exists" },
-      });
+    return res.status(400).json({
+      registerValidationError: { username: "Username already exists" },
+    });
 
   const salt = await bcrypt.genSalt(10);
   const hashedPwd = await bcrypt.hash(req.body.password, salt);

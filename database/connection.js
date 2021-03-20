@@ -30,6 +30,5 @@ mongoose.connection.once("open", () => {
     } else {
       console.log("Pusher error");
     }
-    console.log(change);
   });
 });
